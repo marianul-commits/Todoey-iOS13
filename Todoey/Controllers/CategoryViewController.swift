@@ -8,10 +8,11 @@
 
 import UIKit
 import CoreData
+import ChameleonFramework
 
 
-class CategoryViewController: UITableViewController {
-
+class CategoryViewController: SwipeTableViewController {
+    
     var categories = [Category]()
     
     let catContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -19,11 +20,25 @@ class CategoryViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         loadCategories()
         
+        tableView.rowHeight = 80
+        
     }
-
+    
+    override func viewWillAppear(_ animated: Bool) {
+    
+            
+            guard let navBar = navigationController?.navigationBar else {
+                fatalError("We don fucked up with nav controller")
+            }
+            navBar.backgroundColor = UIColor(hexString: "1D9BF6")
+            
+            if let navBarCoulour = UIColor(hexString: "1D9BF6") {
+                navBar.tintColor = ContrastColorOf(navBarCoulour, returnFlat: true)}
+    }
+    
     
     //MARK: - TableView Datasource Methods
     
@@ -36,10 +51,15 @@ class CategoryViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "categoryCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         cell.textLabel?.text = categories[indexPath.row].name
         
+        var colour = categories[indexPath.row].color
+        
+        cell.backgroundColor = UIColor(hexString: colour ?? "1D9BF6")
+        
+        cell.textLabel?.textColor = ContrastColorOf(UIColor(hexString: colour ?? "1D9BF6")!, returnFlat: true)
         
         return cell
         
@@ -50,6 +70,8 @@ class CategoryViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         performSegue(withIdentifier: "goToItems", sender: self)
+        
+        tableView.deselectRow(at: indexPath, animated: true)
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -62,7 +84,7 @@ class CategoryViewController: UITableViewController {
     
     
     //MARK: - Add new categories
-
+    
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         
         var catTextField = UITextField()
@@ -73,6 +95,7 @@ class CategoryViewController: UITableViewController {
             
             let newCategory = Category(context: self.catContext)
             newCategory.name = catTextField.text!
+            newCategory.color = UIColor.randomFlat().hexValue()
             
             if catTextField.text != ""{
                 self.categories.append(newCategory)
@@ -117,5 +140,11 @@ class CategoryViewController: UITableViewController {
         tableView.reloadData()
     }
     
+    //MARK: - Delete Data from swipe
+    
+    override func updateModel(at indexPath: IndexPath) {
+        self.catContext.delete(self.categories[indexPath.row])
+        self.categories.remove(at: indexPath.row)
+    }
     
 }
